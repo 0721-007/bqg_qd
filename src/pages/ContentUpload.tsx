@@ -95,24 +95,28 @@ const ContentUpload: React.FC = () => {
     }
   };
 
+  const zhMap: Record<string, string> = { author: '作者', genre: '分类', total_chapters: '总章节', artist: '画师', total_episodes: '总话数', narrator: '主播', duration: '时长', file_format: '文件格式' }
   const renderMetadataFields = () => {
     const selectedType = contentTypes.find(type => type.id === parseInt(formData.content_type_id));
     if (!selectedType || !selectedType.metadata_schema) return null;
-    return Object.entries(selectedType.metadata_schema).map(([key, schema]) => (
-      <div key={key} className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {key} {schema.required && <span className="text-red-500">*</span>}
-        </label>
-        <input
-          type="text"
-          value={(formData.metadata as any)[key] || ''}
-          onChange={(e) => handleMetadataChange(key, e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder={`请输入${key}`}
-          required={schema.required}
-        />
-      </div>
-    ));
+    return Object.entries(selectedType.metadata_schema).map(([key, schema]: any) => {
+      const label = schema.label || zhMap[key] || key
+      return (
+        <div key={key} className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {label} {schema.required && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            type="text"
+            value={(formData.metadata as any)[key] || ''}
+            onChange={(e) => handleMetadataChange(key, e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={`请输入${label}`}
+            required={schema.required}
+          />
+        </div>
+      )
+    });
   };
 
   const renderChapterContentFields = (chapter: any, index: number) => {
@@ -291,14 +295,24 @@ const ContentUpload: React.FC = () => {
                 />
               </div>
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">封面图片URL</label>
-                <input
-                  type="url"
-                  value={formData.cover_image}
-                  onChange={(e) => setFormData({ ...formData, cover_image: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="请输入封面图片URL"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">封面图片</label>
+                <div className="flex items-center space-x-4">
+                  <input type="file" accept="image/*" onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    if (!adminPassword) { toast.error('请先在下方输入管理员密码'); return }
+                    const fd = new FormData()
+                    fd.append('file', file)
+                    const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', headers: { 'x-admin-password': adminPassword }, body: fd })
+                    if (!res.ok) { toast.error('上传失败'); return }
+                    const data = await res.json()
+                    setFormData({ ...formData, cover_image: data.url })
+                    toast.success('封面上传成功')
+                  }} />
+                  {formData.cover_image && (
+                    <img src={formData.cover_image} alt="封面预览" className="w-20 h-20 object-cover rounded" />
+                  )}
+                </div>
               </div>
             </div>
             {formData.content_type_id && (
