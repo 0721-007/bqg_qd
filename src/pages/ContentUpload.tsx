@@ -5,6 +5,8 @@ import { API_BASE_URL } from '../config';
 
 const ContentUpload: React.FC = () => {
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
+  const [showTypeForm, setShowTypeForm] = useState(false);
+  const [newType, setNewType] = useState({ name: '', display_name: '', description: '' });
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -260,6 +262,9 @@ const ContentUpload: React.FC = () => {
                       <option key={type.id} value={type.id}>{type.display_name}</option>
                     ))}
                   </select>
+                  <div className="mt-2">
+                    <button type="button" onClick={() => setShowTypeForm(true)} className="text-blue-600 hover:text-blue-800 text-sm">添加新类型</button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">标题 *</label>
@@ -365,6 +370,46 @@ const ContentUpload: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 mb-2">管理员认证</h2>
               <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="请输入管理员密码（用于创建与更新）" />
             </div>
+            {showTypeForm && (
+              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">添加内容类型</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">机器名</label>
+                      <input value={newType.name} onChange={(e) => setNewType({ ...newType, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例如 novel、comic、audio" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">显示名</label>
+                      <input value={newType.display_name} onChange={(e) => setNewType({ ...newType, display_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例如 小说" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                      <input value={newType.description} onChange={(e) => setNewType({ ...newType, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="类型描述" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-3 mt-4">
+                    <button type="button" onClick={() => setShowTypeForm(false)} className="px-4 py-2 border border-gray-300 rounded-lg">取消</button>
+                    <button type="button" onClick={async () => {
+                      if (!newType.name || !newType.display_name) return
+                      const res = await fetch(`${API_BASE_URL}/content-types`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+                        body: JSON.stringify(newType)
+                      })
+                      if (res.ok) {
+                        setShowTypeForm(false)
+                        setNewType({ name: '', display_name: '', description: '' })
+                        fetchInitialData()
+                      } else {
+                        alert('添加类型失败')
+                      }
+                    }} className="px-4 py-2 bg-blue-600 text-white rounded-lg">保存</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button type="button" onClick={() => window.history.back()} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
               <button type="submit" disabled={submitting} className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
