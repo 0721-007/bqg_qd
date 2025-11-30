@@ -144,7 +144,7 @@ const AuthorDashboard: React.FC = () => {
         </div>
 
         {activeTab === 'list' && (
-          <div className="bg-white rounded shadow-sm p-4">
+          <div className="bg-white rounded shadow-sm p-4 overflow-x-auto">
             {loading ? (
               <div className="text-gray-500">加载中...</div>
             ) : items.length === 0 ? (
@@ -195,4 +195,3 @@ const AuthorDashboard: React.FC = () => {
 }
 
 export default AuthorDashboard
-

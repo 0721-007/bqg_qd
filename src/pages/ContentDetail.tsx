@@ -13,6 +13,7 @@ const ContentDetail: React.FC = () => {
   const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
   const [loading, setLoading] = useState(true);
   const [chapterLoading, setChapterLoading] = useState(false);
+  const [showList, setShowList] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -112,8 +113,9 @@ const ContentDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex h-screen">
-        <div className="w-80 bg-white shadow-lg overflow-y-auto">
+      <div className="flex flex-col md:flex-row md:h-screen">
+        <div className={`bg-white shadow-lg overflow-y-auto ${showList ? 'block' : 'hidden'} md:block w-full md:w-80`}
+        >
           <div className="p-6">
             <div className="mb-6">
               <Link 
@@ -157,6 +159,11 @@ const ContentDetail: React.FC = () => {
         </div>
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto p-8">
+            <div className="md:hidden flex justify-between mb-4">
+              <button onClick={() => setShowList(!showList)} className="px-4 py-2 bg-blue-600 text-white rounded">
+                {showList ? '收起目录' : '展开目录'}
+              </button>
+            </div>
             {chapterLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
