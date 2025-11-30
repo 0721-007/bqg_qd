@@ -1,0 +1,198 @@
+import React, { useEffect, useState } from 'react'
+import { API_BASE_URL } from '../config'
+import { Content, ContentListResponse, Chapter } from '../types/content'
+import { toast } from 'sonner'
+
+const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({ content, adminPassword }) => {
+  const [chapters, setChapters] = useState<Chapter[]>([])
+  const [loading, setLoading] = useState(true)
+  const [edit, setEdit] = useState<Partial<Chapter> & { id?: number }>({})
+
+  const fetchChapters = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch(`${API_BASE_URL}/contents/${content.id}/chapters`)
+      const data = await res.json()
+      setChapters(data.data || [])
+    } catch {
+      toast.error('加载章节失败')
+    } finally { setLoading(false) }
+  }
+
+  useEffect(() => { fetchChapters() }, [content.id])
+
+  const resetEdit = () => setEdit({})
+
+  const saveChapter = async () => {
+    try {
+      const body = {
+        chapter_number: edit.chapter_number,
+        title: edit.title,
+        content_data: edit.content_data || { text: '' },
+        metadata: edit.metadata || {}
+      }
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (adminPassword) headers['x-admin-password'] = adminPassword
+      const url = edit.id
+        ? `${API_BASE_URL}/contents/${content.id}/chapters/${edit.id}`
+        : `${API_BASE_URL}/contents/${content.id}/chapters`
+      const method = edit.id ? 'PUT' : 'POST'
+      const res = await fetch(url, { method, headers, body: JSON.stringify(body) })
+      if (!res.ok) throw new Error('保存章节失败')
+      toast.success('章节已保存')
+      resetEdit()
+      fetchChapters()
+    } catch (e: any) { toast.error(e.message || '保存章节失败') }
+  }
+
+  const deleteChapter = async (id: number) => {
+    try {
+      const headers: Record<string, string> = {}
+      if (adminPassword) headers['x-admin-password'] = adminPassword
+      const res = await fetch(`${API_BASE_URL}/contents/${content.id}/chapters/${id}`, { method: 'DELETE', headers })
+      if (!res.ok) throw new Error('删除章节失败')
+      toast.success('章节已删除')
+      fetchChapters()
+    } catch (e: any) { toast.error(e.message || '删除章节失败') }
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">章节管理</h3>
+      {loading ? (
+        <div className="text-gray-500">加载中...</div>
+      ) : (
+        <div className="space-y-2">
+          {chapters.map(ch => (
+            <div key={ch.id} className="border rounded p-3 flex items-center justify-between">
+              <div>
+                <div className="font-medium">第{ch.chapter_number}章 {ch.title}</div>
+              </div>
+              <div className="space-x-2">
+                <button onClick={() => setEdit({ id: ch.id, chapter_number: ch.chapter_number, title: ch.title, content_data: ch.content_data })} className="px-3 py-1 bg-blue-600 text-white rounded">编辑</button>
+                <button onClick={() => deleteChapter(ch.id)} className="px-3 py-1 bg-red-600 text-white rounded">删除</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="border rounded p-4 space-y-3">
+        <div className="font-semibold">{edit.id ? '编辑章节' : '新增章节'}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input type="number" placeholder="章节编号" value={edit.chapter_number as any || ''} onChange={e => setEdit({ ...edit, chapter_number: parseInt(e.target.value) || 1 })} className="px-3 py-2 border rounded" />
+          <input type="text" placeholder="章节标题" value={edit.title || ''} onChange={e => setEdit({ ...edit, title: e.target.value })} className="px-3 py-2 border rounded" />
+        </div>
+        <textarea rows={8} placeholder="章节内容" value={(edit.content_data as any)?.text || ''} onChange={e => setEdit({ ...edit, content_data: { text: e.target.value } })} className="w-full px-3 py-2 border rounded" />
+        <div className="space-x-2">
+          <button onClick={saveChapter} className="px-4 py-2 bg-green-600 text-white rounded">保存</button>
+          {edit.id && (<button onClick={resetEdit} className="px-4 py-2 border rounded">取消</button>)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const AuthorDashboard: React.FC = () => {
+  const username = typeof window !== 'undefined' ? localStorage.getItem('authorUser') || '' : ''
+  const [adminPassword, setAdminPassword] = useState('')
+  const [activeTab, setActiveTab] = useState<'list'|'new'|'chapters'>('list')
+  const [items, setItems] = useState<Content[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Content | null>(null)
+
+  const fetchContents = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch(`${API_BASE_URL}/contents?limit=100`)
+      const data: ContentListResponse = await res.json()
+      const mine = username ? (data.data || []).filter(c => (c.metadata?.author || '').toLowerCase() === username.toLowerCase()) : data.data
+      setItems(mine)
+    } catch {
+      toast.error('加载书籍失败')
+    } finally { setLoading(false) }
+  }
+
+  useEffect(() => { fetchContents() }, [])
+
+  const removeContent = async (id: number) => {
+    try {
+      const headers: Record<string, string> = {}
+      if (adminPassword) headers['x-admin-password'] = adminPassword
+      const res = await fetch(`${API_BASE_URL}/contents/${id}`, { method: 'DELETE', headers })
+      if (!res.ok) throw new Error('删除书籍失败（需要管理员权限）')
+      toast.success('已删除书籍')
+      fetchContents()
+    } catch (e: any) { toast.error(e.message || '删除书籍失败') }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">作者中心</h1>
+          <div className="flex items-center space-x-3">
+            <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="管理员密码（用于删除）" className="px-3 py-2 border rounded" />
+          </div>
+        </div>
+
+        <div className="mb-4 flex space-x-2">
+          <button onClick={() => setActiveTab('list')} className={`px-4 py-2 rounded ${activeTab==='list'?'bg-blue-600 text-white':'bg-white border'}`}>我的书籍</button>
+          <button onClick={() => setActiveTab('new')} className={`px-4 py-2 rounded ${activeTab==='new'?'bg-blue-600 text-white':'bg-white border'}`}>新建书籍</button>
+          {selected && (
+            <button onClick={() => setActiveTab('chapters')} className={`px-4 py-2 rounded ${activeTab==='chapters'?'bg-blue-600 text-white':'bg-white border'}`}>管理章节：{selected.title}</button>
+          )}
+        </div>
+
+        {activeTab === 'list' && (
+          <div className="bg-white rounded shadow-sm p-4">
+            {loading ? (
+              <div className="text-gray-500">加载中...</div>
+            ) : items.length === 0 ? (
+              <div className="text-gray-500">暂无书籍，点击上方“新建书籍”。</div>
+            ) : (
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-2">标题</th>
+                    <th className="py-2">类型</th>
+                    <th className="py-2">状态</th>
+                    <th className="py-2">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map(c => (
+                    <tr key={c.id} className="border-b">
+                      <td className="py-2">{c.title}</td>
+                      <td className="py-2">{c.content_type_display}</td>
+                      <td className="py-2">{c.status}</td>
+                      <td className="py-2 space-x-2">
+                        <button onClick={() => { setSelected(c); setActiveTab('chapters') }} className="px-3 py-1 bg-blue-600 text-white rounded">章节</button>
+                        <button onClick={() => removeContent(c.id)} className="px-3 py-1 bg-red-600 text白 rounded">删除</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'new' && (
+          <div className="bg-white rounded shadow-sm p-4">
+            <div className="text-gray-500 mb-3">请到“创建内容”页完成书籍创建与首章编写。</div>
+            <a href="/admin/upload" className="px-4 py-2 bg-blue-600 text-white rounded inline-block">打开创建内容</a>
+          </div>
+        )}
+
+        {activeTab === 'chapters' && selected && (
+          <div className="bg白 rounded shadow-sm p-4">
+            <ChapterManager content={selected} adminPassword={adminPassword} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default AuthorDashboard
+

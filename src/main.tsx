@@ -7,6 +7,7 @@ import ContentDetail from './pages/ContentDetail'
 import ContentUpload from './pages/ContentUpload'
 import AuthLogin from './pages/AuthLogin'
 import AuthRegister from './pages/AuthRegister'
+import AuthorDashboard from './pages/AuthorDashboard'
 import ContentList from './pages/ContentList'
 import AppLayout from './layout/AppLayout'
 import RequireAuthor from './layout/RequireAuthor'
@@ -20,7 +21,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/book/:id" element={<ContentDetail />} />
           <Route path="/login" element={<AuthLogin />} />
           <Route path="/register" element={<AuthRegister />} />
-          <Route path="/author" element={<RequireAuthor><ContentUpload /></RequireAuthor>} />
+          <Route path="/author" element={<RequireAuthor><AuthorDashboard /></RequireAuthor>} />
           <Route path="/admin" element={<ContentList />} />
           <Route path="/admin/upload" element={<ContentUpload />} />
         </Routes>
