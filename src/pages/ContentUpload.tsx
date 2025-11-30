@@ -103,11 +103,27 @@ const ContentUpload: React.FC = () => {
   };
 
   const zhMap: Record<string, string> = { author: '作者', genre: '分类', total_chapters: '总章节', artist: '画师', total_episodes: '总话数', narrator: '主播', duration: '时长', file_format: '文件格式' }
+  const penNames: string[] = (() => { try { return JSON.parse(localStorage.getItem('authorPenNames') || '[]') } catch { return [] } })()
   const renderMetadataFields = () => {
     const selectedType = contentTypes.find(type => type.id === parseInt(formData.content_type_id));
     if (!selectedType || !selectedType.metadata_schema) return null;
     return Object.entries(selectedType.metadata_schema).map(([key, schema]: any) => {
       const label = schema.label || zhMap[key] || key
+      if (key === 'author' && penNames.length > 0) {
+        return (
+          <div key={key} className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">作者（笔名）</label>
+            <select
+              value={(formData.metadata as any)[key] || penNames[0]}
+              onChange={(e) => handleMetadataChange(key, e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required={schema.required}
+            >
+              {penNames.map((n, i) => (<option key={i} value={n}>{n}</option>))}
+            </select>
+          </div>
+        )
+      }
       return (
         <div key={key} className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">

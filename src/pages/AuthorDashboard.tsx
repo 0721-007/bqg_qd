@@ -102,6 +102,9 @@ const AuthorDashboard: React.FC = () => {
   const [showMine, setShowMine] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [edit, setEdit] = useState<Partial<Content> & { id?: number }>({})
+  const [penNames, setPenNames] = useState<string[]>([])
+  const [showPenPanel, setShowPenPanel] = useState(false)
+  const [newPen, setNewPen] = useState('')
 
   const fetchContents = async () => {
     try {
@@ -109,7 +112,10 @@ const AuthorDashboard: React.FC = () => {
       const res = await fetch(`${API_BASE_URL}/contents?limit=100`)
       const data: ContentListResponse = await res.json()
       let list = data.data || []
-      if (showMine && username) list = list.filter(c => (c.metadata?.author || '').toLowerCase() === username.toLowerCase())
+      if (showMine) {
+        const authors = (penNames.length ? penNames : (username ? [username] : [])).map(a => a.toLowerCase())
+        if (authors.length) list = list.filter(c => authors.includes((c.metadata?.author || '').toLowerCase()))
+      }
       if (keyword) list = list.filter(c => c.title.toLowerCase().includes(keyword.toLowerCase()))
       setItems(list)
     } catch {
@@ -118,6 +124,13 @@ const AuthorDashboard: React.FC = () => {
   }
 
   useEffect(() => { fetchContents() }, [])
+  useEffect(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('authorPenNames') || '[]') : []
+      if (Array.isArray(saved)) setPenNames(saved.filter(Boolean))
+    } catch {}
+  }, [])
+  useEffect(() => { if (showMine) fetchContents() }, [penNames.join(','), showMine])
 
   const removeContent = async (id: number) => {
     try {
@@ -136,6 +149,7 @@ const AuthorDashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">作者中心</h1>
           <div className="flex items-center space-x-3">
+            <button onClick={() => setShowPenPanel(!showPenPanel)} className="px-3 py-2 border rounded">管理笔名</button>
             <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="管理员密码（用于删除）" className="px-3 py-2 border rounded" />
           </div>
         </div>
@@ -153,7 +167,7 @@ const AuthorDashboard: React.FC = () => {
             <div className="flex items-center gap-3 mb-3">
               <label className="inline-flex items-center gap-2">
                 <input type="checkbox" checked={showMine} onChange={e => { setShowMine(e.target.checked); fetchContents() }} />
-                <span>只看我的（作者：{username || '未登录'}）</span>
+                <span>只看我的（作者：{penNames.length ? penNames.join('、') : (username || '未登录')}）</span>
               </label>
               <input type="text" value={keyword} onChange={e => setKeyword(e.target.value)} placeholder="按标题搜索" className="px-3 py-2 border rounded" />
               <button onClick={fetchContents} className="px-3 py-2 bg-blue-600 text-white rounded">刷新</button>
@@ -188,6 +202,25 @@ const AuthorDashboard: React.FC = () => {
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+
+        {showPenPanel && (
+          <div className="bg-white rounded shadow-sm p-4 mt-4">
+            <h3 className="text-lg font-semibold mb-2">笔名管理</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <input value={newPen} onChange={e => setNewPen(e.target.value)} placeholder="输入笔名" className="px-3 py-2 border rounded" />
+              <button onClick={() => { const v = newPen.trim(); if (!v) return; const next = Array.from(new Set([...penNames, v])); setPenNames(next); setNewPen(''); localStorage.setItem('authorPenNames', JSON.stringify(next)) }} className="px-3 py-2 bg-blue-600 text-white rounded">添加</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {penNames.map((n, idx) => (
+                <span key={idx} className="px-3 py-1 bg-gray-100 rounded inline-flex items-center gap-2">
+                  {n}
+                  <button onClick={() => { const next = penNames.filter(x => x !== n); setPenNames(next); localStorage.setItem('authorPenNames', JSON.stringify(next)); }} className="text-red-600">×</button>
+                </span>
+              ))}
+              {penNames.length === 0 && (<span className="text-gray-500">尚未添加笔名，默认使用登录名</span>)}
+            </div>
           </div>
         )}
 
