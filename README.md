@@ -1,14 +1,7 @@
 # bqg_qd 前端
 
-当前目录包含前端源码占位与现有 React 组件：
+React + Vite + Tailwind 前端项目，包含内容列表、详情、上传页面，并通过环境变量指向后端 API。
 
-- `src/components`、`src/pages`、`src/types`
-
-后续建议使用 Vite 创建项目，并通过环境变量配置 API 基础地址：
-
-```
-VITE_API_BASE_URL=https://your-api-domain/api
-```
-
-你可以把现有的 TSX 文件整合到 Vite 项目的对应位置。
-
+- 开发：`npm install && npm run dev`
+- 构建：`npm run build`；预览：`npm run preview`
+- 环境变量：在 `.env` 设置 `VITE_API_BASE_URL=https://your-api-domain/api`
