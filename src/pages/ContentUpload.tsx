@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ContentType, Tag } from '../types/content';
 import { Book, Image, Headphones, Upload, Plus, X } from 'lucide-react';
 import { API_BASE_URL } from '../config';
+import { toast } from 'sonner';
 
 const ContentUpload: React.FC = () => {
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
@@ -43,6 +44,7 @@ const ContentUpload: React.FC = () => {
       setTags(tagsData);
     } catch (error) {
       console.error('获取初始数据失败:', error);
+      toast.error('获取初始数据失败');
     } finally {
       setLoading(false);
     }
@@ -189,9 +191,9 @@ const ContentUpload: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.content_type_id) { alert('请选择内容类型'); return; }
-    if (chapters.length === 0) { alert('请至少添加一个章节'); return; }
-    if (!adminPassword) { alert('请输入管理员密码'); return; }
+    if (!formData.content_type_id) { toast.error('请选择内容类型'); return; }
+    if (chapters.length === 0) { toast.error('请至少添加一个章节'); return; }
+    if (!adminPassword) { toast.error('请输入管理员密码'); return; }
     setSubmitting(true);
     try {
       const contentResponse = await fetch(`${API_BASE_URL}/contents`, {
@@ -217,12 +219,12 @@ const ContentUpload: React.FC = () => {
         });
         if (!chapterResponse.ok) throw new Error(`创建章节失败: ${chapter.title}`);
       }
-      alert('内容创建成功！');
+      toast.success('内容创建成功！');
       setFormData({ title: '', description: '', content_type_id: '', cover_image: '', metadata: {}, tags: [], status: 'draft' });
       setChapters([]);
     } catch (error: any) {
       console.error('提交失败:', error);
-      alert('提交失败: ' + (error?.message || '未知错误'));
+      toast.error('提交失败: ' + (error?.message || '未知错误'));
     } finally { setSubmitting(false); }
   };
 
@@ -402,7 +404,7 @@ const ContentUpload: React.FC = () => {
                         setNewType({ name: '', display_name: '', description: '' })
                         fetchInitialData()
                       } else {
-                        alert('添加类型失败')
+                        toast.error('添加类型失败')
                       }
                     }} className="px-4 py-2 bg-blue-600 text-white rounded-lg">保存</button>
                   </div>

@@ -4,6 +4,7 @@ import { Content, Chapter } from '../types/content';
 import ContentRenderer from '../components/content/ContentRenderer';
 import { ChevronLeft, ChevronRight, List, Home } from 'lucide-react';
 import { API_BASE_URL } from '../config';
+import { toast } from 'sonner';
 
 const ContentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +28,7 @@ const ContentDetail: React.FC = () => {
       setContent(data);
     } catch (error) {
       console.error('获取内容详情失败:', error);
+      toast.error('获取内容详情失败');
     }
   };
 
@@ -40,6 +42,7 @@ const ContentDetail: React.FC = () => {
       }
     } catch (error) {
       console.error('获取章节列表失败:', error);
+      toast.error('获取章节列表失败');
     } finally {
       setLoading(false);
     }
@@ -53,6 +56,7 @@ const ContentDetail: React.FC = () => {
       setCurrentChapter(data);
     } catch (error) {
       console.error('获取章节详情失败:', error);
+      toast.error('获取章节详情失败');
     } finally {
       setChapterLoading(false);
     }
