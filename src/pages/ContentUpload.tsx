@@ -197,7 +197,6 @@ const ContentUpload: React.FC = () => {
     e.preventDefault();
     if (!formData.content_type_id) { toast.error('请选择内容类型'); return; }
     if (chapters.length === 0) { toast.error('请至少添加一个章节'); return; }
-    if (!adminPassword) { toast.error('请输入管理员密码'); return; }
     setSubmitting(true);
     try {
       const contentResponse = await fetch(`${API_BASE_URL}/contents`, {
@@ -300,10 +299,11 @@ const ContentUpload: React.FC = () => {
                   <input type="file" accept="image/*" onChange={async (e) => {
                     const file = e.target.files?.[0]
                     if (!file) return
-                    if (!adminPassword) { toast.error('请先在下方输入管理员密码'); return }
                     const fd = new FormData()
                     fd.append('file', file)
-                    const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', headers: { 'x-admin-password': adminPassword }, body: fd })
+                    const headers: Record<string, string> = {}
+                    if (adminPassword) headers['x-admin-password'] = adminPassword
+                    const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', headers, body: fd })
                     if (!res.ok) { toast.error('上传失败'); return }
                     const data = await res.json()
                     setFormData({ ...formData, cover_image: data.url })
