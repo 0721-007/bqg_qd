@@ -95,18 +95,23 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
 const AuthorDashboard: React.FC = () => {
   const username = typeof window !== 'undefined' ? localStorage.getItem('authorUser') || '' : ''
   const [adminPassword, setAdminPassword] = useState('')
-  const [activeTab, setActiveTab] = useState<'list'|'new'|'chapters'>('list')
+  const [activeTab, setActiveTab] = useState<'list'|'new'|'chapters'|'edit'>('list')
   const [items, setItems] = useState<Content[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Content | null>(null)
+  const [showMine, setShowMine] = useState(false)
+  const [keyword, setKeyword] = useState('')
+  const [edit, setEdit] = useState<Partial<Content> & { id?: number }>({})
 
   const fetchContents = async () => {
     try {
       setLoading(true)
       const res = await fetch(`${API_BASE_URL}/contents?limit=100`)
       const data: ContentListResponse = await res.json()
-      const mine = username ? (data.data || []).filter(c => (c.metadata?.author || '').toLowerCase() === username.toLowerCase()) : data.data
-      setItems(mine)
+      let list = data.data || []
+      if (showMine && username) list = list.filter(c => (c.metadata?.author || '').toLowerCase() === username.toLowerCase())
+      if (keyword) list = list.filter(c => c.title.toLowerCase().includes(keyword.toLowerCase()))
+      setItems(list)
     } catch {
       toast.error('加载书籍失败')
     } finally { setLoading(false) }
@@ -145,6 +150,14 @@ const AuthorDashboard: React.FC = () => {
 
         {activeTab === 'list' && (
           <div className="bg-white rounded shadow-sm p-4 overflow-x-auto">
+            <div className="flex items-center gap-3 mb-3">
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={showMine} onChange={e => { setShowMine(e.target.checked); fetchContents() }} />
+                <span>只看我的（作者：{username || '未登录'}）</span>
+              </label>
+              <input type="text" value={keyword} onChange={e => setKeyword(e.target.value)} placeholder="按标题搜索" className="px-3 py-2 border rounded" />
+              <button onClick={fetchContents} className="px-3 py-2 bg-blue-600 text-white rounded">刷新</button>
+            </div>
             {loading ? (
               <div className="text-gray-500">加载中...</div>
             ) : items.length === 0 ? (
@@ -167,7 +180,8 @@ const AuthorDashboard: React.FC = () => {
                       <td className="py-2">{c.status}</td>
                       <td className="py-2 space-x-2">
                         <button onClick={() => { setSelected(c); setActiveTab('chapters') }} className="px-3 py-1 bg-blue-600 text-white rounded">章节</button>
-                        <button onClick={() => removeContent(c.id)} className="px-3 py-1 bg-red-600 text白 rounded">删除</button>
+                        <button onClick={() => { setSelected(c); setEdit({ id: c.id, title: c.title, description: c.description, cover_image: c.cover_image, status: c.status, metadata: c.metadata }); setActiveTab('edit') }} className="px-3 py-1 bg-yellow-600 text-white rounded">编辑</button>
+                        <button onClick={() => removeContent(c.id)} className="px-3 py-1 bg-red-600 text-white rounded">删除</button>
                       </td>
                     </tr>
                   ))}
@@ -187,6 +201,52 @@ const AuthorDashboard: React.FC = () => {
         {activeTab === 'chapters' && selected && (
           <div className="bg白 rounded shadow-sm p-4">
             <ChapterManager content={selected} adminPassword={adminPassword} />
+          </div>
+        )}
+
+        {activeTab === 'edit' && edit.id && (
+          <div className="bg-white rounded shadow-sm p-4 space-y-3">
+            <h3 className="text-lg font-semibold">编辑书籍</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input type="text" value={edit.title || ''} onChange={e => setEdit({ ...edit, title: e.target.value })} placeholder="标题" className="px-3 py-2 border rounded" />
+              <select value={(edit.status as any) || 'draft'} onChange={e => setEdit({ ...edit, status: e.target.value as any })} className="px-3 py-2 border rounded">
+                <option value="draft">草稿</option>
+                <option value="published">已发布</option>
+                <option value="archived">已归档</option>
+              </select>
+            </div>
+            <textarea rows={4} value={edit.description || ''} onChange={e => setEdit({ ...edit, description: e.target.value })} placeholder="描述" className="w-full px-3 py-2 border rounded" />
+            <div className="flex items-center gap-3">
+              <input type="file" accept="image/*" onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const fd = new FormData()
+                fd.append('file', file)
+                const headers: Record<string, string> = {}
+                if (adminPassword) headers['x-admin-password'] = adminPassword
+                const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', headers, body: fd })
+                if (!res.ok) { toast.error('上传失败'); return }
+                const data = await res.json()
+                setEdit({ ...edit, cover_image: data.url })
+              }} />
+              {edit.cover_image && <img src={edit.cover_image} alt="封面" className="w-20 h-20 object-cover rounded" />}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={async () => {
+                try {
+                  const res = await fetch(`${API_BASE_URL}/contents/${edit.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: edit.title, description: edit.description, cover_image: edit.cover_image, status: edit.status, metadata: edit.metadata })
+                  })
+                  if (!res.ok) throw new Error('保存失败')
+                  toast.success('书籍已更新')
+                  setActiveTab('list')
+                  fetchContents()
+                } catch (e: any) { toast.error(e.message || '保存失败') }
+              }} className="px-4 py-2 bg-green-600 text-white rounded">保存</button>
+              <button onClick={() => setActiveTab('list')} className="px-4 py-2 border rounded">取消</button>
+            </div>
           </div>
         )}
       </div>

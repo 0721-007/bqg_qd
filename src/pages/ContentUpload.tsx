@@ -32,6 +32,13 @@ const ContentUpload: React.FC = () => {
 
   useEffect(() => { fetchInitialData(); }, []);
 
+  useEffect(() => {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('authorUser') || '' : ''
+    if (user && !formData.metadata['author']) {
+      setFormData(prev => ({ ...prev, metadata: { ...prev.metadata, author: user } }))
+    }
+  }, [formData.content_type_id])
+
   const fetchInitialData = async () => {
     try {
       const [typesResponse, tagsResponse] = await Promise.all([
