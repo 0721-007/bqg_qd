@@ -1,7 +1,7 @@
 import React from 'react'
 
 const RequireAuthor: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const logged = typeof window !== 'undefined' ? !!localStorage.getItem('authorUser') : false
+  const logged = typeof window !== 'undefined' ? !!localStorage.getItem('authorToken') : false
   if (!logged) {
     window.location.href = '/login'
     return null

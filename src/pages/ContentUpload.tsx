@@ -222,9 +222,13 @@ const ContentUpload: React.FC = () => {
     if (chapters.length === 0) { toast.error('请至少添加一个章节'); return; }
     setSubmitting(true);
     try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authorToken') || '') : ''
+      const contentHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (token) contentHeaders['Authorization'] = `Bearer ${token}`
+      if (adminPassword) contentHeaders['x-admin-password'] = adminPassword
       const contentResponse = await fetch(`${API_BASE_URL}/contents`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+        headers: contentHeaders,
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
@@ -238,9 +242,12 @@ const ContentUpload: React.FC = () => {
       if (!contentResponse.ok) throw new Error('创建内容失败');
       const contentData = await contentResponse.json();
       for (const chapter of chapters) {
+        const chapterHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (token) chapterHeaders['Authorization'] = `Bearer ${token}`
+        if (adminPassword) chapterHeaders['x-admin-password'] = adminPassword
         const chapterResponse = await fetch(`${API_BASE_URL}/contents/${contentData.id}/chapters`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+          headers: chapterHeaders,
           body: JSON.stringify(chapter)
         });
         if (!chapterResponse.ok) throw new Error(`创建章节失败: ${chapter.title}`);

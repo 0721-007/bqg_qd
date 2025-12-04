@@ -32,6 +32,8 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
         metadata: edit.metadata || {}
       }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authorToken') || '') : ''
+      if (token) headers['Authorization'] = `Bearer ${token}`
       if (adminPassword) headers['x-admin-password'] = adminPassword
       const url = edit.id
         ? `${API_BASE_URL}/contents/${content.id}/chapters/${edit.id}`
@@ -48,6 +50,8 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
   const deleteChapter = async (id: number) => {
     try {
       const headers: Record<string, string> = {}
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authorToken') || '') : ''
+      if (token) headers['Authorization'] = `Bearer ${token}`
       if (adminPassword) headers['x-admin-password'] = adminPassword
       const res = await fetch(`${API_BASE_URL}/contents/${content.id}/chapters/${id}`, { method: 'DELETE', headers })
       if (!res.ok) throw new Error('删除章节失败')
@@ -267,9 +271,13 @@ const AuthorDashboard: React.FC = () => {
             <div className="flex gap-2">
               <button onClick={async () => {
                 try {
+                  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+                  const token = typeof window !== 'undefined' ? (localStorage.getItem('authorToken') || '') : ''
+                  if (token) headers['Authorization'] = `Bearer ${token}`
+                  if (adminPassword) headers['x-admin-password'] = adminPassword
                   const res = await fetch(`${API_BASE_URL}/contents/${edit.id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: JSON.stringify({ title: edit.title, description: edit.description, cover_image: edit.cover_image, status: edit.status, metadata: edit.metadata })
                   })
                   if (!res.ok) throw new Error('保存失败')

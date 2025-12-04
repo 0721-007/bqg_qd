@@ -8,6 +8,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('authorUser')
+    localStorage.removeItem('authorToken')
     navigate('/')
   }
 
