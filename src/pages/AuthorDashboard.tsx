@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config'
 import { Content, ContentListResponse, Chapter } from '../types/content'
 import { toast } from 'sonner'
 import { apiGet, apiPost, apiPut, apiDelete } from '../utils/apiClient'
+import ChapterEditor from '../components/content/ChapterEditor'
 
 const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({ content, adminPassword }) => {
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -79,7 +80,12 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
           <input type="number" placeholder="章节编号" value={edit.chapter_number as any || ''} onChange={e => setEdit({ ...edit, chapter_number: parseInt(e.target.value) || 1 })} className="px-3 py-2 border rounded" />
           <input type="text" placeholder="章节标题" value={edit.title || ''} onChange={e => setEdit({ ...edit, title: e.target.value })} className="px-3 py-2 border rounded" />
         </div>
-        <textarea rows={8} placeholder="章节内容" value={(edit.content_data as any)?.text || ''} onChange={e => setEdit({ ...edit, content_data: { text: e.target.value } })} className="w-full px-3 py-2 border rounded" />
+        <ChapterEditor
+          value={(edit.content_data as any)?.text || ''}
+          onChange={text => setEdit({ ...edit, content_data: { text } })}
+          label="章节内容"
+          required
+        />
         <div className="space-x-2">
           <button onClick={saveChapter} className="px-4 py-2 bg-green-600 text-white rounded">保存</button>
           {edit.id && (<button onClick={resetEdit} className="px-4 py-2 border rounded">取消</button>)}

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Chapter } from '../../types/content';
 import { BookOpen, Image as ImageIcon, Headphones } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ContentRendererProps {
   chapter: Chapter;
@@ -9,10 +11,10 @@ interface ContentRendererProps {
 
 const ContentRenderer: React.FC<ContentRendererProps> = ({ chapter, contentType }) => {
   const renderNovelContent = (contentData: { text: string }) => (
-    <div className="prose prose-lg max-w-none">
-      <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-        {contentData.text}
-      </div>
+    <div className="prose prose-lg max-w-none text-gray-800 leading-relaxed">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        {contentData.text || ''}
+      </ReactMarkdown>
     </div>
   );
 

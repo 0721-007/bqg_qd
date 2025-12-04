@@ -4,6 +4,7 @@ import { Book, Image, Headphones, Upload, Plus, X } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 import { toast } from 'sonner';
 import { apiGet, apiPost } from '../utils/apiClient';
+import ChapterEditor from '../components/content/ChapterEditor';
 
 const ContentUpload: React.FC = () => {
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
@@ -148,14 +149,11 @@ const ContentUpload: React.FC = () => {
       case 'novel':
         return (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">章节内容 *</label>
-            <textarea
-              value={chapter.content_data.text || ''}
-              onChange={(e) => updateChapter(index, 'content_data', { text: e.target.value })}
-              rows={10}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="请输入章节内容"
+            <ChapterEditor
+              label="章节内容 *"
               required
+              value={chapter.content_data.text || ''}
+              onChange={(text) => updateChapter(index, 'content_data', { text })}
             />
           </div>
         );
