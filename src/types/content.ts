@@ -26,6 +26,8 @@ export interface Content {
   content_type_name: string;
   content_type_display: string;
   tags: string[];
+  author_user_id?: number;
+  author_username?: string;
 }
 
 export interface Chapter {

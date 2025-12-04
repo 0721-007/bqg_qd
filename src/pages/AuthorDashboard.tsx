@@ -117,8 +117,14 @@ const AuthorDashboard: React.FC = () => {
       const data: ContentListResponse = await res.json()
       let list = data.data || []
       if (showMine) {
-        const authors = (penNames.length ? penNames : (username ? [username] : [])).map(a => a.toLowerCase())
-        if (authors.length) list = list.filter(c => authors.includes((c.metadata?.author || '').toLowerCase()))
+        const current = (username || '').toLowerCase()
+        list = list.filter(c => {
+          const owner = (c.author_username || '').toLowerCase()
+          if (owner && current) return owner === current
+          const authors = (penNames.length ? penNames : (username ? [username] : [])).map(a => a.toLowerCase())
+          if (!authors.length) return true
+          return authors.includes((c.metadata?.author || '').toLowerCase())
+        })
       }
       if (keyword) list = list.filter(c => c.title.toLowerCase().includes(keyword.toLowerCase()))
       setItems(list)
