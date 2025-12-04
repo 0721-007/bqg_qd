@@ -1,7 +1,5 @@
 import React from 'react'
 import MDEditor from '@uiw/react-md-editor'
-import '@uiw/react-md-editor/dist/md-editor.css'
-import '@uiw/react-markdown-preview/dist/markdown.css'
 
 interface ChapterEditorProps {
   value: string
