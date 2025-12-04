@@ -3,6 +3,7 @@ import { ContentType, Tag } from '../types/content';
 import { Book, Image, Headphones, Upload, Plus, X } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 import { toast } from 'sonner';
+import { apiGet, apiPost } from '../utils/apiClient';
 
 const ContentUpload: React.FC = () => {
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
@@ -41,12 +42,10 @@ const ContentUpload: React.FC = () => {
 
   const fetchInitialData = async () => {
     try {
-      const [typesResponse, tagsResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/content-types`),
-        fetch(`${API_BASE_URL}/tags`)
+      const [typesData, tagsData] = await Promise.all([
+        apiGet<ContentType[]>('/content-types', { auth: false }),
+        apiGet<Tag[]>('/tags', { auth: false })
       ]);
-      const typesData = await typesResponse.json();
-      const tagsData = await tagsResponse.json();
       setContentTypes(typesData);
       setTags(tagsData);
     } catch (error) {
@@ -222,14 +221,9 @@ const ContentUpload: React.FC = () => {
     if (chapters.length === 0) { toast.error('请至少添加一个章节'); return; }
     setSubmitting(true);
     try {
-      const token = typeof window !== 'undefined' ? (localStorage.getItem('authorToken') || '') : ''
-      const contentHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (token) contentHeaders['Authorization'] = `Bearer ${token}`
-      if (adminPassword) contentHeaders['x-admin-password'] = adminPassword
-      const contentResponse = await fetch(`${API_BASE_URL}/contents`, {
-        method: 'POST',
-        headers: contentHeaders,
-        body: JSON.stringify({
+      const contentData = await apiPost<{ id: number }>(
+        '/contents',
+        {
           title: formData.title,
           description: formData.description,
           content_type_id: parseInt(formData.content_type_id),
@@ -237,20 +231,15 @@ const ContentUpload: React.FC = () => {
           tags: formData.tags,
           cover_image: formData.cover_image,
           status: formData.status
-        })
-      });
-      if (!contentResponse.ok) throw new Error('创建内容失败');
-      const contentData = await contentResponse.json();
+        },
+        { adminPassword }
+      );
       for (const chapter of chapters) {
-        const chapterHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
-        if (token) chapterHeaders['Authorization'] = `Bearer ${token}`
-        if (adminPassword) chapterHeaders['x-admin-password'] = adminPassword
-        const chapterResponse = await fetch(`${API_BASE_URL}/contents/${contentData.id}/chapters`, {
-          method: 'POST',
-          headers: chapterHeaders,
-          body: JSON.stringify(chapter)
-        });
-        if (!chapterResponse.ok) throw new Error(`创建章节失败: ${chapter.title}`);
+        await apiPost(
+          `/contents/${contentData.id}/chapters`,
+          chapter,
+          { adminPassword }
+        );
       }
       toast.success('内容创建成功！');
       setFormData({ title: '', description: '', content_type_id: '', cover_image: '', metadata: {}, tags: [], status: 'draft' });
@@ -331,9 +320,7 @@ const ContentUpload: React.FC = () => {
                     if (!file) return
                     const fd = new FormData()
                     fd.append('file', file)
-                    const headers: Record<string, string> = {}
-                    if (adminPassword) headers['x-admin-password'] = adminPassword
-                    const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', headers, body: fd })
+                    const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', headers: adminPassword ? { 'x-admin-password': adminPassword } : undefined, body: fd })
                     if (!res.ok) { toast.error('上传失败'); return }
                     const data = await res.json()
                     setFormData({ ...formData, cover_image: data.url })
@@ -438,16 +425,12 @@ const ContentUpload: React.FC = () => {
                     <button type="button" onClick={() => setShowTypeForm(false)} className="px-4 py-2 border border-gray-300 rounded-lg">取消</button>
                     <button type="button" onClick={async () => {
                       if (!newType.name || !newType.display_name) return
-                      const res = await fetch(`${API_BASE_URL}/content-types`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
-                        body: JSON.stringify(newType)
-                      })
-                      if (res.ok) {
+                      try {
+                        await apiPost('/content-types', newType, { adminPassword, auth: false })
                         setShowTypeForm(false)
                         setNewType({ name: '', display_name: '', description: '' })
                         fetchInitialData()
-                      } else {
+                      } catch {
                         toast.error('添加类型失败')
                       }
                     }} className="px-4 py-2 bg-blue-600 text-white rounded-lg">保存</button>

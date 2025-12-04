@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { Content, ContentListResponse, ContentType } from '../types/content'
-import { API_BASE_URL } from '../config'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { apiGet } from '../utils/apiClient'
 
 const Bookstore: React.FC = () => {
   const [items, setItems] = useState<Content[]>([])
@@ -22,8 +22,7 @@ const Bookstore: React.FC = () => {
       if (activeType) params.append('type', activeType)
       params.append('status', 'published')
       params.append('limit', '60')
-      const res = await fetch(`${API_BASE_URL}/contents?${params}`)
-      const data: ContentListResponse = await res.json()
+      const data = await apiGet<ContentListResponse>(`/contents?${params}`, { auth: false })
       setItems(data.data)
     } catch (e: any) {
       toast.error('加载书籍失败')
@@ -34,8 +33,7 @@ const Bookstore: React.FC = () => {
 
   const fetchTypes = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/content-types`)
-      const data: ContentType[] = await res.json()
+      const data = await apiGet<ContentType[]>('/content-types', { auth: false })
       setTypes(data)
     } catch (e: any) {
       toast.error('加载类型失败')

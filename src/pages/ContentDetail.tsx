@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Content, Chapter } from '../types/content';
+import { Content, Chapter, PaginationData } from '../types/content';
 import ContentRenderer from '../components/content/ContentRenderer';
 import { ChevronLeft, ChevronRight, List, Home } from 'lucide-react';
-import { API_BASE_URL } from '../config';
 import { toast } from 'sonner';
+import { apiGet } from '../utils/apiClient';
+
+type ChapterListResponse = { data: Chapter[]; pagination: PaginationData };
 
 const ContentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,8 +26,7 @@ const ContentDetail: React.FC = () => {
 
   const fetchContent = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/contents/${id}`);
-      const data = await response.json();
+      const data = await apiGet<Content>(`/contents/${id}`);
       setContent(data);
     } catch (error) {
       console.error('获取内容详情失败:', error);
@@ -35,8 +36,7 @@ const ContentDetail: React.FC = () => {
 
   const fetchChapters = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/contents/${id}/chapters`);
-      const data = await response.json();
+      const data = await apiGet<ChapterListResponse>(`/contents/${id}/chapters`);
       setChapters(data.data);
       if (data.data.length > 0) {
         setCurrentChapter(data.data[0]);
@@ -52,8 +52,7 @@ const ContentDetail: React.FC = () => {
   const loadChapter = async (chapterId: number) => {
     try {
       setChapterLoading(true);
-      const response = await fetch(`${API_BASE_URL}/contents/${id}/chapters/${chapterId}`);
-      const data = await response.json();
+      const data = await apiGet<Chapter>(`/contents/${id}/chapters/${chapterId}`);
       setCurrentChapter(data);
     } catch (error) {
       console.error('获取章节详情失败:', error);

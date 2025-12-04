@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { API_BASE_URL } from '../config'
 import { Content, ContentListResponse, Chapter } from '../types/content'
 import { toast } from 'sonner'
+import { apiGet, apiPost, apiPut, apiDelete } from '../utils/apiClient'
 
 const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({ content, adminPassword }) => {
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -11,8 +12,7 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
   const fetchChapters = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API_BASE_URL}/contents/${content.id}/chapters`)
-      const data = await res.json()
+      const data = await apiGet<{ data: Chapter[] }>(`/contents/${content.id}/chapters`)
       setChapters(data.data || [])
     } catch {
       toast.error('加载章节失败')
@@ -31,16 +31,14 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
         content_data: edit.content_data || { text: '' },
         metadata: edit.metadata || {}
       }
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      const token = typeof window !== 'undefined' ? (localStorage.getItem('authorToken') || '') : ''
-      if (token) headers['Authorization'] = `Bearer ${token}`
-      if (adminPassword) headers['x-admin-password'] = adminPassword
-      const url = edit.id
-        ? `${API_BASE_URL}/contents/${content.id}/chapters/${edit.id}`
-        : `${API_BASE_URL}/contents/${content.id}/chapters`
-      const method = edit.id ? 'PUT' : 'POST'
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) })
-      if (!res.ok) throw new Error('保存章节失败')
+      const path = edit.id
+        ? `/contents/${content.id}/chapters/${edit.id}`
+        : `/contents/${content.id}/chapters`
+      if (edit.id) {
+        await apiPut(path, body, { adminPassword })
+      } else {
+        await apiPost(path, body, { adminPassword })
+      }
       toast.success('章节已保存')
       resetEdit()
       fetchChapters()
@@ -49,12 +47,7 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
 
   const deleteChapter = async (id: number) => {
     try {
-      const headers: Record<string, string> = {}
-      const token = typeof window !== 'undefined' ? (localStorage.getItem('authorToken') || '') : ''
-      if (token) headers['Authorization'] = `Bearer ${token}`
-      if (adminPassword) headers['x-admin-password'] = adminPassword
-      const res = await fetch(`${API_BASE_URL}/contents/${content.id}/chapters/${id}`, { method: 'DELETE', headers })
-      if (!res.ok) throw new Error('删除章节失败')
+      await apiDelete(`/contents/${content.id}/chapters/${id}`, { adminPassword })
       toast.success('章节已删除')
       fetchChapters()
     } catch (e: any) { toast.error(e.message || '删除章节失败') }
@@ -113,8 +106,7 @@ const AuthorDashboard: React.FC = () => {
   const fetchContents = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API_BASE_URL}/contents?limit=100`)
-      const data: ContentListResponse = await res.json()
+      const data = await apiGet<ContentListResponse>('/contents?limit=100')
       let list = data.data || []
       if (showMine) {
         const current = (username || '').toLowerCase()
@@ -144,10 +136,7 @@ const AuthorDashboard: React.FC = () => {
 
   const removeContent = async (id: number) => {
     try {
-      const headers: Record<string, string> = {}
-      if (adminPassword) headers['x-admin-password'] = adminPassword
-      const res = await fetch(`${API_BASE_URL}/contents/${id}`, { method: 'DELETE', headers })
-      if (!res.ok) throw new Error('删除书籍失败（需要管理员权限）')
+      await apiDelete(`/contents/${id}`, { adminPassword })
       toast.success('已删除书籍')
       fetchContents()
     } catch (e: any) { toast.error(e.message || '删除书籍失败') }
@@ -277,16 +266,7 @@ const AuthorDashboard: React.FC = () => {
             <div className="flex gap-2">
               <button onClick={async () => {
                 try {
-                  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-                  const token = typeof window !== 'undefined' ? (localStorage.getItem('authorToken') || '') : ''
-                  if (token) headers['Authorization'] = `Bearer ${token}`
-                  if (adminPassword) headers['x-admin-password'] = adminPassword
-                  const res = await fetch(`${API_BASE_URL}/contents/${edit.id}`, {
-                    method: 'PUT',
-                    headers,
-                    body: JSON.stringify({ title: edit.title, description: edit.description, cover_image: edit.cover_image, status: edit.status, metadata: edit.metadata })
-                  })
-                  if (!res.ok) throw new Error('保存失败')
+                  await apiPut(`/contents/${edit.id}`, { title: edit.title, description: edit.description, cover_image: edit.cover_image, status: edit.status, metadata: edit.metadata }, { adminPassword })
                   toast.success('书籍已更新')
                   setActiveTab('list')
                   fetchContents()

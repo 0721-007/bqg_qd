@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { API_BASE_URL } from '../config'
 import { toast } from 'sonner'
+import { apiPost } from '../utils/apiClient'
 
 const AuthLogin: React.FC = () => {
   const [username, setUsername] = useState('')
@@ -14,21 +14,16 @@ const AuthLogin: React.FC = () => {
     if (!username.trim() || !password) return
     try {
       setLoading(true)
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error || '登录失败')
-        return
-      }
+      const data = await apiPost<{ user?: { username: string }; token?: string }>(
+        '/auth/login',
+        { username: username.trim(), password },
+        { auth: false }
+      )
       localStorage.setItem('authorUser', data.user?.username || username.trim())
       if (data.token) localStorage.setItem('authorToken', data.token)
       navigate('/author')
-    } catch {
-      toast.error('登录失败')
+    } catch (err: any) {
+      toast.error(err?.message || '登录失败')
     } finally {
       setLoading(false)
     }

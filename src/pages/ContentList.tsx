@@ -3,7 +3,7 @@ import { Content, ContentFilters, ContentListResponse } from '../types/content';
 import ContentCard from '../components/content/ContentCard';
 import { Book, Image, Headphones, Filter, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { API_BASE_URL } from '../config';
+import { apiGet } from '../utils/apiClient';
 
 const ContentList: React.FC = () => {
   const [contents, setContents] = useState<Content[]>([]);
@@ -29,8 +29,7 @@ const ContentList: React.FC = () => {
       if (filters.tag) params.append('tag', filters.tag);
       if (filters.page) params.append('page', filters.page.toString());
       if (filters.limit) params.append('limit', filters.limit.toString());
-      const response = await fetch(`${API_BASE_URL}/contents?${params}`);
-      const data: ContentListResponse = await response.json();
+      const data = await apiGet<ContentListResponse>(`/contents?${params}`);
       setContents(data.data);
       setPagination(data.pagination);
     } catch (error) {
