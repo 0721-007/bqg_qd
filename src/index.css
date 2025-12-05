@@ -5,6 +5,82 @@
 /* 额外全局样式 */
 body { @apply bg-gray-50; }
 
+/* 阅读器样式 */
+.reader-shell {
+  @apply text-gray-900;
+}
+
+.reader-shell-light {
+  @apply bg-gray-50 text-gray-900;
+}
+
+.reader-shell-sepia {
+  background-color: #fdf6e3;
+  color: #2b2b2b;
+}
+
+.reader-shell-dark {
+  background-color: #0f172a;
+  color: #e5e7eb;
+}
+
+.reader-content {
+  max-width: 46rem; /* 类似阅读站单栏宽度 */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+@media (min-width: 768px) {
+  .reader-content {
+    padding: 2.5rem 2rem 4rem;
+  }
+}
+
+.reader-article {
+  border-radius: 0.75rem;
+  padding: 1.75rem 1.5rem 2rem;
+  background-color: rgba(255, 255, 255, 0.96);
+}
+
+.reader-shell-sepia .reader-article {
+  background-color: #fffaf0;
+}
+
+.reader-shell-dark .reader-article {
+  background-color: rgba(15, 23, 42, 0.85);
+}
+
+.reader-prose {
+  max-width: none;
+}
+
+.reader-prose p {
+  margin-bottom: 1em;
+}
+
+.reader-prose pre {
+  background-color: rgba(15, 23, 42, 0.06);
+  color: inherit;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.reader-font-sm {
+  font-size: 0.95rem;
+  line-height: 1.9;
+}
+
+.reader-font-md {
+  font-size: 1.05rem;
+  line-height: 1.9;
+}
+
+.reader-font-lg {
+  font-size: 1.15rem;
+  line-height: 2.0;
+}
+
 .chapter-editor .ql-toolbar {
   @apply bg-gray-50 border-b border-gray-200;
 }

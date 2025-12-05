@@ -16,6 +16,8 @@ const ContentDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [chapterLoading, setChapterLoading] = useState(false);
   const [showList, setShowList] = useState(false);
+  const [readerTheme, setReaderTheme] = useState<'light' | 'sepia' | 'dark'>('light');
+  const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg'>('md');
 
   useEffect(() => {
     if (id) {
@@ -110,8 +112,11 @@ const ContentDetail: React.FC = () => {
   const hasPrevChapter = currentChapterIndex > 0;
   const hasNextChapter = currentChapterIndex < chapters.length - 1;
 
+  const themeClass = readerTheme === 'dark' ? 'reader-shell-dark' : readerTheme === 'sepia' ? 'reader-shell-sepia' : 'reader-shell-light';
+  const fontSizeClass = fontSize === 'sm' ? 'reader-font-sm' : fontSize === 'lg' ? 'reader-font-lg' : 'reader-font-md';
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen reader-shell ${themeClass}`}>
       <div className="flex flex-col md:flex-row md:h-screen">
         <div className={`bg-white shadow-lg overflow-y-auto ${showList ? 'block' : 'hidden'} md:block w-full md:w-80`}
         >
@@ -157,11 +162,60 @@ const ContentDetail: React.FC = () => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto p-8">
+          <div className={`reader-content ${fontSizeClass}`}>
             <div className="md:hidden flex justify-between mb-4">
               <button onClick={() => setShowList(!showList)} className="px-4 py-2 bg-blue-600 text-white rounded">
                 {showList ? '收起目录' : '展开目录'}
               </button>
+            </div>
+            <div className="flex items-center justify-between mb-4 text-sm opacity-80">
+              <div className="flex items-center space-x-2">
+                <span>字号</span>
+                <button
+                  type="button"
+                  onClick={() => setFontSize('sm')}
+                  className={`px-2 py-1 rounded border text-xs ${fontSize === 'sm' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300'}`}
+                >
+                  小
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFontSize('md')}
+                  className={`px-2 py-1 rounded border text-xs ${fontSize === 'md' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300'}`}
+                >
+                  中
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFontSize('lg')}
+                  className={`px-2 py-1 rounded border text-xs ${fontSize === 'lg' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300'}`}
+                >
+                  大
+                </button>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>主题</span>
+                <button
+                  type="button"
+                  onClick={() => setReaderTheme('light')}
+                  className={`w-6 h-6 rounded border ${readerTheme === 'light' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'} bg-white`}
+                  aria-label="浅色主题"
+                />
+                <button
+                  type="button"
+                  onClick={() => setReaderTheme('sepia')}
+                  className={`w-6 h-6 rounded border ${readerTheme === 'sepia' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'}`}
+                  style={{ backgroundColor: '#fdf6e3' }}
+                  aria-label="护眼主题"
+                />
+                <button
+                  type="button"
+                  onClick={() => setReaderTheme('dark')}
+                  className={`w-6 h-6 rounded border ${readerTheme === 'dark' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'}`}
+                  style={{ backgroundColor: '#0f172a' }}
+                  aria-label="夜间主题"
+                />
+              </div>
             </div>
             {chapterLoading ? (
               <div className="text-center py-12">
@@ -170,8 +224,8 @@ const ContentDetail: React.FC = () => {
               </div>
             ) : currentChapter ? (
               <>
-                <ContentRenderer 
-                  chapter={currentChapter} 
+                <ContentRenderer
+                  chapter={currentChapter}
                   contentType={content.content_type_name}
                 />
                 <div className="flex items-center justify-between mt-8 pt-8 border-t border-gray-200">

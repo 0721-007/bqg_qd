@@ -346,7 +346,7 @@ const ContentUpload: React.FC = () => {
         for (const line of cleanedLines) {
           const t = line.trim();
           if (!t) {
-            currentLines.push(line);
+            currentLines.push('');
             continue;
           }
           if (chapterTitleRegex.test(t)) {
@@ -357,7 +357,9 @@ const ContentUpload: React.FC = () => {
             currentLines = [];
             hasAnyChapter = true;
           } else {
-            currentLines.push(line);
+            // 去掉行首成片的半角空格，避免被 Markdown 识别为 code block；保留一个全角缩进
+            const normalized = line.replace(/^[ \t]{2,}/, '　　');
+            currentLines.push(normalized);
           }
         }
         if (currentTitle || currentLines.length) {

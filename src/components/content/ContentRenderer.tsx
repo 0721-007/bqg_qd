@@ -12,7 +12,7 @@ interface ContentRendererProps {
 
 const ContentRenderer: React.FC<ContentRendererProps> = ({ chapter, contentType }) => {
   const renderNovelContent = (contentData: { text: string }) => (
-    <div className="prose prose-lg max-w-none text-gray-800 leading-relaxed">
+    <div className="prose prose-lg max-w-none leading-relaxed reader-prose">
       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
         {contentData.text || ''}
       </ReactMarkdown>
@@ -70,10 +70,10 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ chapter, contentType 
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{chapter.title}</h1>
-        <div className="flex items-center text-sm text-gray-500">
+    <article className="reader-article">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">{chapter.title}</h1>
+        <div className="flex items-center text-sm opacity-80">
           <span>第{chapter.chapter_number}章</span>
           {chapter.published_at && (
             <>
@@ -82,9 +82,9 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ chapter, contentType 
             </>
           )}
         </div>
-      </div>
-      <div className="content-body">{renderContent()}</div>
-    </div>
+      </header>
+      <div className="reader-body">{renderContent()}</div>
+    </article>
   );
 };
 
