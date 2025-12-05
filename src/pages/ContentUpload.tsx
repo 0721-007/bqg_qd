@@ -296,27 +296,44 @@ const ContentUpload: React.FC = () => {
         const raw = String(reader.result || '');
         const lines = raw.split(/\r?\n/);
         const cleanedLines = lines.map(l => l.replace(/^\uFEFF/, ''));
+
+        // 猜书名：优先使用 《书名》 这种形式，其次是第一行较短的非广告行，最后退回文件名
         let guessedTitle = file.name.replace(/\.[^.]+$/, '');
+        let detectedTitle: string | null = null;
         for (const line of cleanedLines) {
           const t = line.trim();
           if (!t) continue;
-          if (t.includes('轻小说文库') || t.includes('WenKu8') || t.includes('天使动漫')) continue;
-          if (t.startsWith('《') && t.endsWith('》')) {
-            guessedTitle = t.replace(/[《》]/g, '').trim();
+          // 跳过常见广告 / 站点信息行
+          const lower = t.toLowerCase();
+          if (t.includes('轻小说文库') || lower.includes('wenku8') || t.includes('天使动漫')) continue;
+          if (t.includes('制作') || t.includes('录入') || t.includes('图源') || t.includes('转自')) continue;
+          const m = t.match(/^《(.+?)》$/);
+          if (m) {
+            detectedTitle = m[1].trim();
             break;
           }
-          guessedTitle = t;
-          break;
+          if (!detectedTitle && t.length <= 30) {
+            detectedTitle = t;
+          }
+        }
+        if (detectedTitle) {
+          guessedTitle = detectedTitle;
         }
 
+        // 章节标题：例如 “第一卷 第一章 开端——海帆 六月”、“第十章 xxx”、“第2章 xxx” 等
         const chapterTitleRegex = /^\s*(第[一二三四五六七八九十百千零〇两0-9]+[卷章节回部幕话].*)$/;
         const resultChapters: Array<{ chapter_number: number; title: string; content_data: any; metadata: any }> = [];
         let currentTitle = '';
         let currentLines: string[] = [];
+        let hasAnyChapter = false;
 
         const flushCurrent = () => {
-          if (!currentTitle && currentLines.join('').trim() === '') return;
           const text = currentLines.join('\n').trim();
+          if (!currentTitle && !hasAnyChapter) {
+            // 第一章之前的前言内容，不单独成章，直接丢弃
+            return;
+          }
+          if (!currentTitle && !text) return;
           const chapterNumber = resultChapters.length + 1;
           resultChapters.push({
             chapter_number: chapterNumber,
@@ -338,6 +355,7 @@ const ContentUpload: React.FC = () => {
             }
             currentTitle = t;
             currentLines = [];
+            hasAnyChapter = true;
           } else {
             currentLines.push(line);
           }

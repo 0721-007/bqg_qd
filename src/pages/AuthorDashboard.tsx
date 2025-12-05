@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { API_BASE_URL } from '../config'
 import { Content, ContentListResponse, Chapter } from '../types/content'
 import { toast } from 'sonner'
@@ -9,6 +9,7 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [loading, setLoading] = useState(true)
   const [edit, setEdit] = useState<Partial<Chapter> & { id?: number }>({})
+  const txtInputRef = useRef<HTMLInputElement | null>(null)
 
   const fetchChapters = async () => {
     try {
@@ -23,6 +24,134 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
   useEffect(() => { fetchChapters() }, [content.id])
 
   const resetEdit = () => setEdit({})
+
+  const handleImportTxtClick = () => {
+    if (txtInputRef.current) {
+      txtInputRef.current.value = ''
+      txtInputRef.current.click()
+    }
+  }
+
+  const handleImportTxtFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.txt')) {
+      toast.error('目前仅支持 TXT 文本文件')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = async () => {
+      try {
+        const raw = String(reader.result || '')
+        const lines = raw.split(/\r?\n/).map(l => l.replace(/^\uFEFF/, ''))
+
+        let guessedTitle = file.name.replace(/\.[^.]+$/, '')
+        let detectedTitle: string | null = null
+        for (const line of lines) {
+          const t = line.trim()
+          if (!t) continue
+          const lower = t.toLowerCase()
+          if (t.includes('轻小说文库') || lower.includes('wenku8') || t.includes('天使动漫')) continue
+          if (t.includes('制作') || t.includes('录入') || t.includes('图源') || t.includes('转自')) continue
+          const m = t.match(/^《(.+?)》$/)
+          if (m) {
+            detectedTitle = m[1].trim()
+            break
+          }
+          if (!detectedTitle && t.length <= 50) {
+            detectedTitle = t
+          }
+        }
+        if (detectedTitle) {
+          guessedTitle = detectedTitle
+        }
+
+        const chapterTitleRegex = /^\s*(第[一二三四五六七八九十百千零〇两0-9]+[卷章节回部幕话].*)$/
+        const resultChapters: Array<{ chapter_number: number; title: string; content_data: any; metadata: any }> = []
+        let currentTitle = ''
+        let currentLines: string[] = []
+        let hasAnyChapter = false
+
+        const flushCurrent = () => {
+          const text = currentLines.join('\n').trim()
+          if (!currentTitle && !hasAnyChapter) {
+            return
+          }
+          if (!currentTitle && !text) return
+          const chapterNumber = resultChapters.length + 1
+          resultChapters.push({
+            chapter_number: chapterNumber,
+            title: currentTitle || `第${chapterNumber}章`,
+            content_data: { text },
+            metadata: {},
+          })
+        }
+
+        for (const line of lines) {
+          const t = line.trim()
+          if (!t) {
+            currentLines.push(line)
+            continue
+          }
+          if (chapterTitleRegex.test(t)) {
+            if (currentTitle || currentLines.length) {
+              flushCurrent()
+            }
+            currentTitle = t
+            currentLines = []
+            hasAnyChapter = true
+          } else {
+            currentLines.push(line)
+          }
+        }
+        if (currentTitle || currentLines.length) {
+          flushCurrent()
+        }
+
+        if (resultChapters.length > 1) {
+          const confirmed = window.confirm(`检测到 ${resultChapters.length} 个章节标题，是否删除当前书籍现有章节并重新导入？该操作不可撤销。`)
+          if (!confirmed) return
+          if (chapters.length > 0 && !adminPassword) {
+            toast.error('请先在右上输入管理员密码（用于删除原有章节）')
+            return
+          }
+          try {
+            for (const ch of chapters) {
+              await apiDelete(`/contents/${content.id}/chapters/${ch.id}`, { adminPassword })
+            }
+            for (const ch of resultChapters) {
+              await apiPost(`/contents/${content.id}/chapters`, ch)
+            }
+            toast.success(`已重新导入 ${resultChapters.length} 个章节`)
+            resetEdit()
+            fetchChapters()
+          } catch (err: any) {
+            console.error('重新导入整本章节失败:', err)
+            toast.error(err?.message || '重新导入整本章节失败')
+          }
+        } else {
+          const text = lines.join('\n').trim()
+          if (!text) {
+            toast.error('TXT 文件内容为空，无法导入')
+            return
+          }
+          setEdit(prev => ({
+            ...prev,
+            title: prev.title || guessedTitle,
+            content_data: { text },
+          }))
+          toast.success('已从 TXT 导入章节内容')
+        }
+      } catch (err) {
+        console.error('导入章节 TXT 失败:', err)
+        toast.error('导入章节 TXT 失败')
+      }
+    }
+    reader.onerror = () => {
+      toast.error('读取 TXT 文件失败')
+    }
+    reader.readAsText(file, 'utf-8')
+  }
 
   const saveChapter = async () => {
     try {
@@ -75,7 +204,16 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
         </div>
       )}
       <div className="border rounded p-4 space-y-3">
-        <div className="font-semibold">{edit.id ? '编辑章节' : '新增章节'}</div>
+        <div className="flex items-center justify-between">
+          <div className="font-semibold">{edit.id ? '编辑章节' : '新增章节'}</div>
+          <button
+            type="button"
+            onClick={handleImportTxtClick}
+            className="px-3 py-1 text-sm border rounded text-gray-700 hover:bg-gray-50"
+          >
+            从 TXT 导入
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input type="number" placeholder="章节编号" value={edit.chapter_number as any || ''} onChange={e => setEdit({ ...edit, chapter_number: parseInt(e.target.value) || 1 })} className="px-3 py-2 border rounded" />
           <input type="text" placeholder="章节标题" value={edit.title || ''} onChange={e => setEdit({ ...edit, title: e.target.value })} className="px-3 py-2 border rounded" />
@@ -85,6 +223,13 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
           onChange={text => setEdit({ ...edit, content_data: { text } })}
           label="章节内容"
           required
+        />
+        <input
+          ref={txtInputRef}
+          type="file"
+          accept=".txt"
+          className="hidden"
+          onChange={handleImportTxtFile}
         />
         <div className="space-x-2">
           <button onClick={saveChapter} className="px-4 py-2 bg-green-600 text-white rounded">保存</button>
