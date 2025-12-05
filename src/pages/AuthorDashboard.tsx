@@ -36,9 +36,9 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
         ? `/contents/${content.id}/chapters/${edit.id}`
         : `/contents/${content.id}/chapters`
       if (edit.id) {
-        await apiPut(path, body, { adminPassword })
+        await apiPut(path, body)
       } else {
-        await apiPost(path, body, { adminPassword })
+        await apiPost(path, body)
       }
       toast.success('章节已保存')
       resetEdit()
@@ -262,9 +262,7 @@ const AuthorDashboard: React.FC = () => {
                 if (!file) return
                 const fd = new FormData()
                 fd.append('file', file)
-                const headers: Record<string, string> = {}
-                if (adminPassword) headers['x-admin-password'] = adminPassword
-                const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', headers, body: fd })
+                const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: fd })
                 if (!res.ok) { toast.error('上传失败'); return }
                 const data = await res.json()
                 setEdit({ ...edit, cover_image: data.url })
@@ -274,7 +272,7 @@ const AuthorDashboard: React.FC = () => {
             <div className="flex gap-2">
               <button onClick={async () => {
                 try {
-                  await apiPut(`/contents/${edit.id}`, { title: edit.title, description: edit.description, cover_image: edit.cover_image, status: edit.status, metadata: edit.metadata }, { adminPassword })
+                  await apiPut(`/contents/${edit.id}`, { title: edit.title, description: edit.description, cover_image: edit.cover_image, status: edit.status, metadata: edit.metadata })
                   toast.success('书籍已更新')
                   setActiveTab('list')
                   fetchContents()

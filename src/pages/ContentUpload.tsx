@@ -229,14 +229,12 @@ const ContentUpload: React.FC = () => {
           tags: formData.tags,
           cover_image: formData.cover_image,
           status: formData.status
-        },
-        { adminPassword }
+        }
       );
       for (const chapter of chapters) {
         await apiPost(
           `/contents/${contentData.id}/chapters`,
-          chapter,
-          { adminPassword }
+          chapter
         );
       }
       toast.success('内容创建成功！');
@@ -318,7 +316,7 @@ const ContentUpload: React.FC = () => {
                     if (!file) return
                     const fd = new FormData()
                     fd.append('file', file)
-                    const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', headers: adminPassword ? { 'x-admin-password': adminPassword } : undefined, body: fd })
+                    const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: fd })
                     if (!res.ok) { toast.error('上传失败'); return }
                     const data = await res.json()
                     setFormData({ ...formData, cover_image: data.url })
@@ -398,8 +396,8 @@ const ContentUpload: React.FC = () => {
               </div>
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">管理员认证</h2>
-              <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="请输入管理员密码（用于创建与更新）" />
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">管理员认证（仅用于管理内容类型等）</h2>
+              <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="仅在添加/修改内容类型等管理操作时需要填写" />
             </div>
             {showTypeForm && (
               <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
