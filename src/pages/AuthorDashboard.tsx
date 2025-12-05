@@ -4,6 +4,7 @@ import { Content, ContentListResponse, Chapter } from '../types/content'
 import { toast } from 'sonner'
 import { apiGet, apiPost, apiPut, apiDelete } from '../utils/apiClient'
 import ChapterEditor from '../components/content/ChapterEditor'
+import { decodeTxtFile } from '../utils/textEncoding'
 
 const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({ content, adminPassword }) => {
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -39,10 +40,9 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
       toast.error('目前仅支持 TXT 文本文件')
       return
     }
-    const reader = new FileReader()
-    reader.onload = async () => {
+    ;(async () => {
       try {
-        const raw = String(reader.result || '')
+        const raw = await decodeTxtFile(file)
         const lines = raw.split(/\r?\n/).map(l => l.replace(/^\uFEFF/, ''))
 
         let guessedTitle = file.name.replace(/\.[^.]+$/, '')
@@ -146,11 +146,7 @@ const ChapterManager: React.FC<{ content: Content; adminPassword: string }> = ({
         console.error('导入章节 TXT 失败:', err)
         toast.error('导入章节 TXT 失败')
       }
-    }
-    reader.onerror = () => {
-      toast.error('读取 TXT 文件失败')
-    }
-    reader.readAsText(file, 'utf-8')
+    })()
   }
 
   const saveChapter = async () => {

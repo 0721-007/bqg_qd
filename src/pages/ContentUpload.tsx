@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../config';
 import { toast } from 'sonner';
 import { apiGet, apiPost } from '../utils/apiClient';
 import ChapterEditor from '../components/content/ChapterEditor';
+import { decodeTxtFile } from '../utils/textEncoding';
 
 const ContentUpload: React.FC = () => {
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
@@ -290,10 +291,9 @@ const ContentUpload: React.FC = () => {
       toast.error('目前仅支持 TXT 文本文件');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
+    (async () => {
       try {
-        const raw = String(reader.result || '');
+        const raw = await decodeTxtFile(file);
         const lines = raw.split(/\r?\n/);
         const cleanedLines = lines.map(l => l.replace(/^\uFEFF/, ''));
 
@@ -385,11 +385,7 @@ const ContentUpload: React.FC = () => {
         console.error('导入 TXT 失败:', err);
         toast.error('导入 TXT 失败');
       }
-    };
-    reader.onerror = () => {
-      toast.error('读取 TXT 文件失败');
-    };
-    reader.readAsText(file, 'utf-8');
+    })();
   };
 
   if (loading) {
