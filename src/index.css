@@ -14,18 +14,20 @@ body { @apply bg-gray-50; }
   @apply bg-gray-50 text-gray-900;
 }
 
+/* 护眼主题：偏淡的米黄色 */
 .reader-shell-sepia {
-  background-color: #fdf6e3;
-  color: #2b2b2b;
+  background-color: #f5f1e6;
+  color: #333333;
 }
 
+/* 夜间主题：深蓝灰背景，浅色文字 */
 .reader-shell-dark {
-  background-color: #0f172a;
+  background-color: #020617; /* slate-950 */
   color: #e5e7eb;
 }
 
 .reader-content {
-  max-width: 46rem; /* 类似阅读站单栏宽度 */
+  max-width: 52rem; /* 稍微更宽一点的单栏宽度 */
   margin-left: auto;
   margin-right: auto;
   padding: 1.5rem 1.25rem 3rem;
@@ -40,15 +42,15 @@ body { @apply bg-gray-50; }
 .reader-article {
   border-radius: 0.75rem;
   padding: 1.75rem 1.5rem 2rem;
-  background-color: rgba(255, 255, 255, 0.96);
+  background-color: #ffffff;
 }
 
 .reader-shell-sepia .reader-article {
-  background-color: #fffaf0;
+  background-color: #fcf7ee;
 }
 
 .reader-shell-dark .reader-article {
-  background-color: rgba(15, 23, 42, 0.85);
+  background-color: #020617;
 }
 
 .reader-prose {
@@ -64,6 +66,26 @@ body { @apply bg-gray-50; }
   color: inherit;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
+}
+
+/* 夜间模式下正文和标题的对比度 */
+.reader-shell-dark .reader-article,
+.reader-shell-dark .reader-prose,
+.reader-shell-dark .reader-prose h1,
+.reader-shell-dark .reader-prose h2,
+.reader-shell-dark .reader-prose h3,
+.reader-shell-dark .reader-prose p,
+.reader-shell-dark .reader-prose li {
+  color: #e5e7eb;
+}
+
+.reader-shell-dark .reader-prose a {
+  color: #93c5fd;
+}
+
+.reader-shell-dark .reader-prose pre {
+  background-color: rgba(15, 23, 42, 0.8);
+  color: #e5e7eb;
 }
 
 .reader-font-sm {

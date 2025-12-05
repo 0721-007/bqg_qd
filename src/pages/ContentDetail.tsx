@@ -161,7 +161,7 @@ const ContentDetail: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-w-0 overflow-y-auto">
           <div className={`reader-content ${fontSizeClass}`}>
             <div className="md:hidden flex justify-between mb-4">
               <button onClick={() => setShowList(!showList)} className="px-4 py-2 bg-blue-600 text-white rounded">
