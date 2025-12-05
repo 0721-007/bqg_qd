@@ -3,6 +3,7 @@ import { Chapter } from '../../types/content';
 import { BookOpen, Image as ImageIcon, Headphones } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface ContentRendererProps {
   chapter: Chapter;
@@ -12,7 +13,7 @@ interface ContentRendererProps {
 const ContentRenderer: React.FC<ContentRendererProps> = ({ chapter, contentType }) => {
   const renderNovelContent = (contentData: { text: string }) => (
     <div className="prose prose-lg max-w-none text-gray-800 leading-relaxed">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
         {contentData.text || ''}
       </ReactMarkdown>
     </div>

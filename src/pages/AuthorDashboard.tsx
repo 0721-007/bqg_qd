@@ -109,6 +109,8 @@ const AuthorDashboard: React.FC = () => {
   const [showPenPanel, setShowPenPanel] = useState(false)
   const [newPen, setNewPen] = useState('')
 
+  const statusLabel: Record<string, string> = { draft: '草稿', published: '已发布', archived: '已归档' }
+
   const fetchContents = async () => {
     try {
       setLoading(true)
@@ -196,7 +198,7 @@ const AuthorDashboard: React.FC = () => {
                     <tr key={c.id} className="border-b">
                       <td className="py-2">{c.title}</td>
                       <td className="py-2">{c.content_type_display}</td>
-                      <td className="py-2">{c.status}</td>
+                      <td className="py-2">{statusLabel[c.status] || c.status}</td>
                       <td className="py-2 space-x-2">
                         <button onClick={() => { setSelected(c); setActiveTab('chapters') }} className="px-3 py-1 bg-blue-600 text-white rounded">章节</button>
                         <button onClick={() => { setSelected(c); setEdit({ id: c.id, title: c.title, description: c.description, cover_image: c.cover_image, status: c.status, metadata: c.metadata }); setActiveTab('edit') }} className="px-3 py-1 bg-yellow-600 text-white rounded">编辑</button>
