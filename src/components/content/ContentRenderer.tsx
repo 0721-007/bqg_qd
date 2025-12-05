@@ -20,12 +20,17 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ chapter, contentType 
   );
 
   const renderComicContent = (contentData: { images: string[]; image_descriptions?: string[] }) => (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {contentData.images?.map((image, index) => (
         <div key={index} className="text-center">
-          <img src={image} alt={contentData.image_descriptions?.[index] || `漫画第${index + 1}页`} className="max-w-full h-auto mx-auto rounded-lg shadow-md" />
+          <img 
+            src={image} 
+            alt={contentData.image_descriptions?.[index] || `漫画第${index + 1}页`} 
+            className="max-w-full w-full h-auto mx-auto rounded-lg shadow-md" 
+            loading="lazy"
+          />
           {contentData.image_descriptions?.[index] && (
-            <p className="text-sm text-gray-600 mt-2">{contentData.image_descriptions[index]}</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-2 px-2">{contentData.image_descriptions[index]}</p>
           )}
         </div>
       ))}
@@ -71,13 +76,13 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ chapter, contentType 
 
   return (
     <article className="reader-article">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">{chapter.title}</h1>
-        <div className="flex items-center text-sm opacity-80">
+      <header className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2">{chapter.title}</h1>
+        <div className="flex items-center text-xs sm:text-sm opacity-80">
           <span>第{chapter.chapter_number}章</span>
           {chapter.published_at && (
             <>
-              <span className="mx-2">•</span>
+              <span className="mx-1.5 sm:mx-2">•</span>
               <span>{new Date(chapter.published_at).toLocaleDateString()}</span>
             </>
           )}

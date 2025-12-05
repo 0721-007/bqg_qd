@@ -163,55 +163,58 @@ const ContentDetail: React.FC = () => {
         </div>
         <div className="flex-1 min-w-0 overflow-y-auto">
           <div className={`reader-content ${fontSizeClass}`}>
-            <div className="md:hidden flex justify-between mb-4">
-              <button onClick={() => setShowList(!showList)} className="px-4 py-2 bg-blue-600 text-white rounded">
+            <div className="md:hidden flex justify-between mb-3">
+              <button 
+                onClick={() => setShowList(!showList)} 
+                className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
                 {showList ? '收起目录' : '展开目录'}
               </button>
             </div>
-            <div className="flex items-center justify-between mb-4 text-sm opacity-80">
-              <div className="flex items-center space-x-2">
-                <span>字号</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 text-xs sm:text-sm opacity-80">
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <span className="text-xs sm:text-sm">字号</span>
                 <button
                   type="button"
                   onClick={() => setFontSize('sm')}
-                  className={`px-2 py-1 rounded border text-xs ${fontSize === 'sm' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300'}`}
+                  className={`px-2 sm:px-2.5 py-1 rounded border text-xs transition-colors ${fontSize === 'sm' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:border-blue-400'}`}
                 >
                   小
                 </button>
                 <button
                   type="button"
                   onClick={() => setFontSize('md')}
-                  className={`px-2 py-1 rounded border text-xs ${fontSize === 'md' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300'}`}
+                  className={`px-2 sm:px-2.5 py-1 rounded border text-xs transition-colors ${fontSize === 'md' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:border-blue-400'}`}
                 >
                   中
                 </button>
                 <button
                   type="button"
                   onClick={() => setFontSize('lg')}
-                  className={`px-2 py-1 rounded border text-xs ${fontSize === 'lg' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300'}`}
+                  className={`px-2 sm:px-2.5 py-1 rounded border text-xs transition-colors ${fontSize === 'lg' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:border-blue-400'}`}
                 >
                   大
                 </button>
               </div>
-              <div className="flex items-center space-x-2">
-                <span>主题</span>
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <span className="text-xs sm:text-sm">主题</span>
                 <button
                   type="button"
                   onClick={() => setReaderTheme('light')}
-                  className={`w-6 h-6 rounded border ${readerTheme === 'light' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'} bg-white`}
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded border transition-all ${readerTheme === 'light' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'} bg-white`}
                   aria-label="浅色主题"
                 />
                 <button
                   type="button"
                   onClick={() => setReaderTheme('sepia')}
-                  className={`w-6 h-6 rounded border ${readerTheme === 'sepia' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'}`}
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded border transition-all ${readerTheme === 'sepia' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'}`}
                   style={{ backgroundColor: '#fdf6e3' }}
                   aria-label="护眼主题"
                 />
                 <button
                   type="button"
                   onClick={() => setReaderTheme('dark')}
-                  className={`w-6 h-6 rounded border ${readerTheme === 'dark' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'}`}
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded border transition-all ${readerTheme === 'dark' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'}`}
                   style={{ backgroundColor: '#0f172a' }}
                   aria-label="夜间主题"
                 />
@@ -228,33 +231,33 @@ const ContentDetail: React.FC = () => {
                   chapter={currentChapter}
                   contentType={content.content_type_name}
                 />
-                <div className="flex items-center justify-between mt-8 pt-8 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200">
                   <button
                     onClick={handlePrevChapter}
                     disabled={!hasPrevChapter}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    className={`flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors w-full sm:w-auto text-sm sm:text-base ${
                       hasPrevChapter
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span>上一章</span>
                   </button>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-xs sm:text-sm text-gray-500 order-first sm:order-none">
                     第{currentChapter.chapter_number}章 / 共{chapters.length}章
                   </div>
                   <button
                     onClick={handleNextChapter}
                     disabled={!hasNextChapter}
-                    className={`flex items中心 space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    className={`flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors w-full sm:w-auto text-sm sm:text-base ${
                       hasNextChapter
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                   >
                     <span>下一章</span>
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>
               </>
