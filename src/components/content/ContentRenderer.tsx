@@ -51,19 +51,13 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ chapter, contentType 
     try {
       const contentData = chapter.content_data as any;
       switch (contentType) {
-        case 'novel':
-          return renderNovelContent(contentData);
         case 'comic':
           return renderComicContent(contentData);
         case 'audio':
           return renderAudioContent(contentData);
         default:
-          return (
-            <div className="text-center text-gray-500">
-              <BookOpen className="w-16 h-16 mx-auto mb-4" />
-              <p>未知的内容类型</p>
-            </div>
-          );
+          // 默认按图文富文本渲染（支持文字 + 图片等），包括 novel 及其他自定义类型
+          return renderNovelContent(contentData);
       }
     } catch (error: any) {
       return (

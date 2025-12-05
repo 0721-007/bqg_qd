@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ContentType, Tag } from '../types/content';
 import { Book, Image, Headphones, Upload, Plus, X } from 'lucide-react';
 import { API_BASE_URL } from '../config';
@@ -31,6 +31,7 @@ const ContentUpload: React.FC = () => {
     content_data: Record<string, any>;
     metadata: Record<string, any>;
   }>>([]);
+  const txtInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => { fetchInitialData(); }, []);
 
@@ -146,17 +147,6 @@ const ContentUpload: React.FC = () => {
     const selectedType = contentTypes.find(type => type.id === parseInt(formData.content_type_id));
     if (!selectedType) return null;
     switch (selectedType.name) {
-      case 'novel':
-        return (
-          <div className="mb-4">
-            <ChapterEditor
-              label="章节内容 *"
-              required
-              value={chapter.content_data.text || ''}
-              onChange={(text) => updateChapter(index, 'content_data', { text })}
-            />
-          </div>
-        );
       case 'comic':
         return (
           <div className="mb-4">
@@ -168,6 +158,37 @@ const ContentUpload: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="请输入图片URL，每行一个"
             />
+            <div className="mt-2 flex items-center space-x-3">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (!files.length) return;
+                  const uploaded: string[] = [];
+                  for (const file of files) {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    try {
+                      const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: fd });
+                      if (!res.ok) { toast.error('上传图片失败'); continue; }
+                      const data = await res.json();
+                      if (data.url) uploaded.push(data.url);
+                    } catch {
+                      toast.error('上传图片失败');
+                    }
+                  }
+                  if (!uploaded.length) return;
+                  const currentImages = chapter.content_data.images || [];
+                  const newImages = [...currentImages, ...uploaded];
+                  updateChapter(index, 'content_data', { ...chapter.content_data, images: newImages });
+                  toast.success(`已上传 ${uploaded.length} 张图片`);
+                  e.target.value = '';
+                }}
+              />
+              <span className="text-xs text-gray-500">选择图片上传后，会自动把链接追加到上方列表。</span>
+            </div>
           </div>
         );
       case 'audio':
@@ -209,7 +230,16 @@ const ContentUpload: React.FC = () => {
           </div>
         );
       default:
-        return null;
+        return (
+          <div className="mb-4">
+            <ChapterEditor
+              label="章节内容 *"
+              required
+              value={chapter.content_data.text || ''}
+              onChange={(text) => updateChapter(index, 'content_data', { text })}
+            />
+          </div>
+        );
     }
   };
 
@@ -244,6 +274,104 @@ const ContentUpload: React.FC = () => {
       console.error('提交失败:', error);
       toast.error('提交失败: ' + (error?.message || '未知错误'));
     } finally { setSubmitting(false); }
+  };
+
+  const handleImportTxtClick = () => {
+    if (txtInputRef.current) {
+      txtInputRef.current.value = '';
+      txtInputRef.current.click();
+    }
+  };
+
+  const handleImportTxtFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.txt')) {
+      toast.error('目前仅支持 TXT 文本文件');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const raw = String(reader.result || '');
+        const lines = raw.split(/\r?\n/);
+        const cleanedLines = lines.map(l => l.replace(/^\uFEFF/, ''));
+        let guessedTitle = file.name.replace(/\.[^.]+$/, '');
+        for (const line of cleanedLines) {
+          const t = line.trim();
+          if (!t) continue;
+          if (t.includes('轻小说文库') || t.includes('WenKu8') || t.includes('天使动漫')) continue;
+          if (t.startsWith('《') && t.endsWith('》')) {
+            guessedTitle = t.replace(/[《》]/g, '').trim();
+            break;
+          }
+          guessedTitle = t;
+          break;
+        }
+
+        const chapterTitleRegex = /^\s*(第[一二三四五六七八九十百千零〇两0-9]+[卷章节回部幕话].*)$/;
+        const resultChapters: Array<{ chapter_number: number; title: string; content_data: any; metadata: any }> = [];
+        let currentTitle = '';
+        let currentLines: string[] = [];
+
+        const flushCurrent = () => {
+          if (!currentTitle && currentLines.join('').trim() === '') return;
+          const text = currentLines.join('\n').trim();
+          const chapterNumber = resultChapters.length + 1;
+          resultChapters.push({
+            chapter_number: chapterNumber,
+            title: currentTitle || `第${chapterNumber}章`,
+            content_data: { text },
+            metadata: {},
+          });
+        };
+
+        for (const line of cleanedLines) {
+          const t = line.trim();
+          if (!t) {
+            currentLines.push(line);
+            continue;
+          }
+          if (chapterTitleRegex.test(t)) {
+            if (currentTitle || currentLines.length) {
+              flushCurrent();
+            }
+            currentTitle = t;
+            currentLines = [];
+          } else {
+            currentLines.push(line);
+          }
+        }
+        if (currentTitle || currentLines.length) {
+          flushCurrent();
+        }
+
+        if (resultChapters.length === 0) {
+          const text = cleanedLines.join('\n').trim();
+          if (!text) {
+            toast.error('TXT 文件内容为空，无法导入');
+            return;
+          }
+          resultChapters.push({
+            chapter_number: 1,
+            title: guessedTitle || '第1章',
+            content_data: { text },
+            metadata: {},
+          });
+        }
+
+        setFormData(prev => ({ ...prev, title: prev.title || guessedTitle }));
+        setChapters(resultChapters);
+        toast.success(`已从 TXT 导入 ${resultChapters.length} 个章节`);
+      } catch (err) {
+        console.error('导入 TXT 失败:', err);
+        toast.error('导入 TXT 失败');
+      }
+    };
+    reader.onerror = () => {
+      toast.error('读取 TXT 文件失败');
+    };
+    reader.readAsText(file, 'utf-8');
   };
 
   if (loading) {
@@ -353,9 +481,14 @@ const ContentUpload: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">章节</h2>
-                <button type="button" onClick={addChapter} className="flex items-center space-x-2 bg-green-600 text白 px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                  <Plus className="w-4 h-4" /><span>添加章节</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button type="button" onClick={handleImportTxtClick} className="flex items-center space-x-2 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <Upload className="w-4 h-4" /><span>从 TXT 导入</span>
+                  </button>
+                  <button type="button" onClick={addChapter} className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    <Plus className="w-4 h-4" /><span>添加章节</span>
+                  </button>
+                </div>
               </div>
               {chapters.length === 0 ? (
                 <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
@@ -435,6 +568,7 @@ const ContentUpload: React.FC = () => {
               </div>
             )}
 
+            <input ref={txtInputRef} type="file" accept=".txt" className="hidden" onChange={handleImportTxtFile} />
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button type="button" onClick={() => window.history.back()} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
               <button type="submit" disabled={submitting} className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">

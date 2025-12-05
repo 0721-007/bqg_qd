@@ -102,7 +102,6 @@ const AuthorDashboard: React.FC = () => {
   const [items, setItems] = useState<Content[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Content | null>(null)
-  const [showMine, setShowMine] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [edit, setEdit] = useState<Partial<Content> & { id?: number }>({})
   const [penNames, setPenNames] = useState<string[]>([])
@@ -114,18 +113,8 @@ const AuthorDashboard: React.FC = () => {
   const fetchContents = async () => {
     try {
       setLoading(true)
-      const data = await apiGet<ContentListResponse>('/contents?limit=100')
+      const data = await apiGet<ContentListResponse>('/contents?limit=100&mine=1')
       let list = data.data || []
-      if (showMine) {
-        const current = (username || '').toLowerCase()
-        list = list.filter(c => {
-          const owner = (c.author_username || '').toLowerCase()
-          if (owner && current) return owner === current
-          const authors = (penNames.length ? penNames : (username ? [username] : [])).map(a => a.toLowerCase())
-          if (!authors.length) return true
-          return authors.includes((c.metadata?.author || '').toLowerCase())
-        })
-      }
       if (keyword) list = list.filter(c => c.title.toLowerCase().includes(keyword.toLowerCase()))
       setItems(list)
     } catch {
@@ -140,7 +129,6 @@ const AuthorDashboard: React.FC = () => {
       if (Array.isArray(saved)) setPenNames(saved.filter(Boolean))
     } catch {}
   }, [])
-  useEffect(() => { if (showMine) fetchContents() }, [penNames.join(','), showMine])
 
   const removeContent = async (id: number) => {
     try {
@@ -172,10 +160,7 @@ const AuthorDashboard: React.FC = () => {
         {activeTab === 'list' && (
           <div className="bg-white rounded shadow-sm p-4 overflow-x-auto">
             <div className="flex items-center gap-3 mb-3">
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" checked={showMine} onChange={e => { setShowMine(e.target.checked); fetchContents() }} />
-                <span>只看我的（作者：{penNames.length ? penNames.join('、') : (username || '未登录')}）</span>
-              </label>
+              <span className="text-sm text-gray-600">当前作者账号：{username || '未登录'}</span>
               <input type="text" value={keyword} onChange={e => setKeyword(e.target.value)} placeholder="按标题搜索" className="px-3 py-2 border rounded" />
               <button onClick={fetchContents} className="px-3 py-2 bg-blue-600 text-white rounded">刷新</button>
             </div>
