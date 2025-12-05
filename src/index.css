@@ -5,3 +5,25 @@
 /* 额外全局样式 */
 body { @apply bg-gray-50; }
 
+.chapter-editor .ql-toolbar {
+  @apply bg-gray-50 border-b border-gray-200;
+}
+
+.chapter-editor .ql-container {
+  border: none !important;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.chapter-editor .ql-editor {
+  min-height: 220px;
+  padding: 12px 16px;
+}
+
+.chapter-editor .ql-picker,
+.chapter-editor .ql-stroke,
+.chapter-editor .ql-fill {
+  color: #374151;
+  stroke: #4b5563;
+}
+

@@ -26,7 +26,7 @@ const ChapterEditor: React.FC<ChapterEditorProps> = ({ value, onChange, label = 
   const lines = Math.max(1, plain.split(/\r?\n/).length)
 
   return (
-    <div data-color-mode="light">
+    <div data-color-mode="light" className="chapter-editor">
       <div className="flex items-center justify-between mb-2">
         <label className="block text-sm font-medium text-gray-700">
           {label}
